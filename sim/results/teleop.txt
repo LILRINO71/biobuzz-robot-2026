@@ -1,0 +1,39 @@
+  1.84  rumble gamepad1 (rumbleBlips)
+  1.84  front intake spat out B
+  2.00  back intake took P
+  2.60  front intake took R
+  3.20  front intake took P
+  3.64  rumble gamepad1 (rumble)
+  3.80  front intake took P
+  4.24  front intake spat out R
+  4.30  back intake spat out P
+  4.52  back intake spat out P
+  4.84  front intake spat out P
+  5.44  rumble gamepad1 (rumbleBlips)
+  5.44  front intake spat out B
+  5.44  back intake spat out P
+  6.04  front intake spat out R
+  6.34  back intake spat out P
+  6.82  FIRED P at (-2.7, -61.5) heading 103.8°
+  7.36  FIRED R at (-2.7, -61.5) heading 102.6°
+  7.90  FIRED P at (-2.7, -61.5) heading 102.6°
+  8.44  FIRED P at (-2.7, -61.5) heading 102.6°
+
+{
+  "opmode": "BiobuzzTeleOp.java",
+  "scenario": "teleop",
+  "shots": 4,
+  "fired": "PRPP",
+  "taken": "PRPP",
+  "spatOut": "BRPPPBPRP",
+  "opponentFired": 0,
+  "finalPose": {
+    "x": -2.7,
+    "y": -61.5,
+    "headingDeg": 102.6
+  },
+  "inLoadingZone": false,
+  "doneAt": null,
+  "lastStep": "",
+  "rumbles": 3
+}

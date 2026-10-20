@@ -1,0 +1,7 @@
+node_modules/
+__pycache__/
+*.bin
+*.meta.json
+# the team's own robot CAD never goes in this repo; only the parts designed here
+*.step
+!cad/biobuzz-transfer-outtake.step

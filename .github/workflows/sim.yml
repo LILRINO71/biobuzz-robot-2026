@@ -1,0 +1,34 @@
+name: sim
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  robot-in-sim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get FTC SimBench Pro and biobuzz-shot-sim
+        run: |
+          git clone --depth 1 https://github.com/LILRINO71/ftc-simbench-pro.git ../ftc-simbench-pro
+          git clone --depth 1 https://github.com/LILRINO71/biobuzz-shot-sim.git ../biobuzz-shot-sim
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Shot table in the code matches the physics sim
+        run: node analysis/shot-map/make_shot_table.mjs --check code/org/firstinspires/ftc/teamcode/pedroPathing/robot/ShotTable.java
+
+      - name: Run the Auto and TeleOp in SimBench Pro
+        run: node sim/check.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sim-results
+          path: sim/results/

@@ -1,0 +1,38 @@
+  0.02  step AIM_PRELOAD at (-40.0, -61.5) heading 90.0°
+  1.16  FIRED P at (-40.0, -61.5) heading 58.9°
+  1.70  FIRED P at (-40.0, -61.5) heading 58.8°
+  2.24  FIRED P at (-40.0, -61.5) heading 58.8°
+  2.78  FIRED P at (-40.0, -61.5) heading 58.8°
+  2.86  step WAIT_TIP at (-40.0, -61.5) heading 58.8°
+  5.88  step SWEEP at (-40.0, -61.5) heading 58.8°
+  7.20  front intake took P
+  7.54  front intake spat out B
+  8.54  step TO_FIRE at (-4.8, -33.0) heading 0.0°
+  8.70  front intake took R
+  9.20  front intake took P
+ 11.16  step FIRE at (-58.3, 37.2) heading -24.7°
+ 11.30  FIRED P at (-58.2, 37.5) heading -26.3°
+ 11.84  FIRED R at (-58.2, 37.5) heading -25.4°
+ 12.38  FIRED P at (-58.2, 37.5) heading -25.5°
+ 12.46  step WAIT_TIP at (-58.2, 37.5) heading -25.5°
+ 16.98  step PARK at (-58.2, 37.5) heading -25.5°
+ 17.00  step DONE at (-58.2, 37.5) heading -25.5°
+
+{
+  "opmode": "BiobuzzAuto.java",
+  "scenario": "auto",
+  "shots": 7,
+  "fired": "PPPPPRP",
+  "taken": "PRP",
+  "spatOut": "B",
+  "opponentFired": 0,
+  "finalPose": {
+    "x": -58,
+    "y": 38,
+    "headingDeg": -25.4
+  },
+  "inLoadingZone": true,
+  "doneAt": 17,
+  "lastStep": "DONE",
+  "rumbles": 0
+}

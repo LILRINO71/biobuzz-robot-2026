@@ -1,0 +1,100 @@
+{
+  "frame": "robot: x forward, y left, z up, origin = drivetrain centre on the tiles, mm",
+  "column": {
+    "ballX": [
+      -50,
+      50
+    ],
+    "z": [
+      82,
+      322
+    ],
+    "fixedStackY": 66.5,
+    "sprungStackY": -66.5,
+    "axleZ": [
+      120,
+      170,
+      220,
+      270
+    ],
+    "wheel": "72 mm Gecko 30A, 9 mm",
+    "tipGap": 61,
+    "travel": 25,
+    "linkPivots": {
+      "bottom": [
+        -78.87,
+        155.93
+      ],
+      "top": [
+        -78.87,
+        305.93
+      ]
+    },
+    "motor": "435 rpm on fixed axle 4, outside the back wall",
+    "beams": {
+      "bottomZ": 96,
+      "topZ": 300,
+      "topY": 25
+    },
+    "flapZ": 324,
+    "flapHinge": [
+      54,
+      330
+    ]
+  },
+  "shooter": {
+    "pivot": [
+      -78,
+      404
+    ],
+    "wheelA": "96 mm x2 + flywheel",
+    "wheelB": "72 mm, sprung",
+    "centreDistance": 145,
+    "nipGap": 61,
+    "pitch": 72,
+    "pitchRange": [
+      60,
+      87
+    ],
+    "startPitch": 87,
+    "bCentre": [
+      59.9,
+      359.19
+    ],
+    "nip": [
+      -3.34,
+      379.74
+    ],
+    "armPivotLocal": [
+      40,
+      -145
+    ],
+    "motor": [
+      -176,
+      428
+    ],
+    "belt": "2:1 HTD5 20T -> 40T",
+    "pitchGears": "20T servo -> 60T pod (3:1)",
+    "servoGear": [
+      -106.28,
+      375.72
+    ]
+  },
+  "ramps": {
+    "mouth": [
+      255,
+      6
+    ],
+    "top": [
+      70,
+      150
+    ],
+    "angleDeg": 37.9,
+    "hinge": [
+      -72.01,
+      139.56
+    ],
+    "width": 196,
+    "thickness": 3
+  }
+}
