@@ -20,6 +20,8 @@ node sim/run-opmode.mjs --opmode BiobuzzAuto.java --scenario auto --partner 120 
 
 Set `SIMBENCH=<path>` if the ftc-simbench-pro checkout isn't next to this repo. CI runs `check.mjs` on every push and uploads the logs. The copies in `results/` are from the last local run.
 
+`run-opmode.mjs` uses SimBench Pro through its headless entry, [`tools/run-opmode.mjs`](https://github.com/LILRINO71/ftc-simbench-pro/blob/main/docs/code-support.md#running-an-opmode-without-the-page-toolsrun-opmodemjs). SimBench reads the code, compiles it and runs INIT, START and the 50 Hz passes. This repo supplies the robot model as the `host` and the scenario as hooks around each pass.
+
 | Scenario | What has to happen |
 |---|---|
 | `auto-one-cycle` | Fires the 4 preloads first and at least 7 balls in total. Never fires an opponent NECTAR, spits out the blue one it meets, and is parked in the LOADING ZONE before 29.3 s |

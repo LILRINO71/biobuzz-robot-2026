@@ -6,39 +6,36 @@
 //   node sim/run-opmode.mjs --opmode BiobuzzAuto.java --scenario auto [--seconds 30]
 //                           [--partner 120] [--spawn 14] [--simbench ../ftc-simbench-pro]
 //
-// SimBench Pro: https://github.com/LILRINO71/ftc-simbench-pro (only its src/ and tests/load.mjs are used)
+// SimBench Pro: https://github.com/LILRINO71/ftc-simbench-pro, through its headless entry
+// tools/run-opmode.mjs: it reads the code, compiles it and runs INIT, START and the 50 Hz
+// passes; this file is the robot it runs against (the `host`) and the scenario.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..');
-const IN = 0.0254, DT = 0.02, VMAX = 1.6, WMAX = 5.5;
+const IN = 0.0254, VMAX = 1.6, WMAX = 5.5;
 const MOUTHS = { frontColor: 'front', backColor: 'back' };
 const RGB = { P: [230, 200, 30], R: [210, 30, 40], B: [30, 60, 210] };
 
 export async function runOpMode(opts = {}) {
   const o = { opmode: 'BiobuzzAuto.java', scenario: 'auto', seconds: 30, partner: 0, spawn: 25, alliance: 'RED',
     simbench: process.env.SIMBENCH || path.resolve(REPO, '..', 'ftc-simbench-pro'), code: path.join(REPO, 'code'), ...opts };
-  const { loadEngine } = await import(pathToFileURL(path.join(o.simbench, 'tests', 'load.mjs')).href);
-  const E = loadEngine();
+  const runner = path.join(o.simbench, 'tools', 'run-opmode.mjs');
+  if (!fs.existsSync(runner)) throw new Error(`no tools/run-opmode.mjs in ${o.simbench}: update that ftc-simbench-pro checkout, or set SIMBENCH`);
+  const SB = await import(pathToFileURL(runner).href);
+  const DT = SB.DT;
 
-  const pkg = path.join(o.code, 'org/firstinspires/ftc/teamcode/pedroPathing');
-  const read = (f) => fs.readFileSync(f, 'utf8');
-  const libs = [path.join(pkg, 'Constants.java'), ...fs.readdirSync(path.join(pkg, 'robot')).map((f) => path.join(pkg, 'robot', f))]
-    .map((f) => {
-      let src = read(f);
-      if (f.endsWith('RobotConfig.java')) src = src.replace('PARTNER_AUTO_G = 0;', `PARTNER_AUTO_G = ${+o.partner};`);
-      return { file: path.basename(f), src };
-    });
-  const comp = E.jvCompile(read(path.join(pkg, o.opmode)), libs);
-  if (!comp.ok) throw new Error('compile failed: ' + comp.err);
-  if (comp.bad && comp.bad.length) throw new Error('parse errors: ' + JSON.stringify(comp.bad));
+  // every .java under code/, with the partner's AUTO grams this scenario plays with
+  const code = SB.readJava(o.code).map((f) => (f.file === 'RobotConfig.java'
+    ? { file: f.file, path: f.path, src: f.src.replace('PARTNER_AUTO_G = 0;', `PARTNER_AUTO_G = ${+o.partner};`) } : f));
 
-  const H = { t: 0, clock: 0, x: -40 * IN, y: -61.5 * IN, h: Math.PI / 2, vx: 0, vy: 0, w: 0, pads: { 1: {}, 2: {} } };
+  let R = { t: 0, tick: 0, pads: { 1: {}, 2: {} }, telemetry: [] };          // the run: SimBench's clock, sticks and telemetry
+  const H = { x: -40 * IN, y: -61.5 * IN, h: Math.PI / 2, vx: 0, vy: 0, w: 0 };
   const devs = new Map();
   const W = { column: [], top: false, inPulse: 0, mouth: { front: null, back: null }, events: [], shots: [], taken: [], spat: [], spawned: 0, rumbles: 0 };
-  const log = (s) => W.events.push(`${H.t.toFixed(2).padStart(6)}  ${s}`);
+  const log = (s) => W.events.push(`${R.t.toFixed(2).padStart(6)}  ${s}`);
   const at = () => `(${(H.x / IN).toFixed(1)}, ${(H.y / IN).toFixed(1)}) heading ${(H.h * 180 / Math.PI).toFixed(1)}°`;
   const host = {
     dev(name, type, kind) {
@@ -46,16 +43,15 @@ export async function runOpMode(opts = {}) {
       if (!s) { s = { name, type, kind, cmd: kind === 'servo' ? null : 0, act: 0, ticks: 0, offset: 0, vel: 0, target: 0, reversed: false, mode: 'run', tpr: 28, spec: { rpm: 6000 } }; devs.set(name, s); }
       return s;
     },
-    pad(i) { return H.pads[i] || {}; }, now() { return H.clock; }, runtime() { return H.t; }, heading() { return H.h; }, omega() { return H.w; },
+    heading() { return H.h; }, omega() { return H.w; },
     pose() { return { x: H.x, y: H.y, h: H.h }; },
     vel() { const c = Math.cos(H.h), s = Math.sin(H.h); return { x: H.vx * c + H.vy * s, y: -H.vx * s + H.vy * c }; },
     colorDist(name) { return W.mouth[MOUTHS[name]] ? 0.03 : 8.19; },
     color(name) { const m = W.mouth[MOUTHS[name]]; return m ? RGB[m.kind] : [90, 90, 90]; },
     volts() { return 12.4; },
     touch(name) { return name === 'columnTop' ? W.top : name === 'columnIn' ? W.inPulse > 0 : false; },
-    telemetry(l) { H.tel = l; }, rumble(i, m) { W.rumbles++; log(`rumble gamepad${i} (${m})`); },
+    rumble(i, m) { W.rumbles++; log(`rumble gamepad${i} (${m})`); },
   };
-  const P = new E.JvProgram(comp, host);
   const cmd = (n) => { const s = devs.get(n); return s && s.cmd != null ? s.cmd : 0; };
 
   function physics() {
@@ -79,7 +75,7 @@ export async function runOpMode(opts = {}) {
       if (W.feedT > 0.06) {
         const b = W.column.shift(); W.top = false; W.feedT = 0;
         if (fly) fly.vel *= 0.93;
-        W.shots.push({ t: H.t, ball: b }); log(`FIRED ${b} at ${at()}`);
+        W.shots.push({ t: R.t, ball: b }); log(`FIRED ${b} at ${at()}`);
       }
     } else W.feedT = 0;
 
@@ -96,7 +92,7 @@ export async function runOpMode(opts = {}) {
   }
 
   function scenario(k) {
-    const t = H.t, next = (list) => list[(W.spawned++) % list.length];
+    const t = R.t, next = (list) => list[(W.spawned++) % list.length];
     if (o.scenario === 'auto') {
       const sweeping = cmd('frontIntake') > 0.5 && Math.abs(Math.abs(H.y / IN) - 33) < 6;
       if (sweeping && !W.mouth.front && k % o.spawn === 0) W.mouth.front = { kind: next(['P', 'B', 'R', 'P', 'R', 'R']), t: 0 };
@@ -108,31 +104,32 @@ export async function runOpMode(opts = {}) {
         if (k % 30 === 0 && !W.mouth.front) W.mouth.front = { kind: next(['B', 'R', 'P', 'P', 'R', 'P']), t: 0 };
         if (k % 45 === 0 && !W.mouth.back) W.mouth.back = { kind: 'P', t: 0 };
       } else if (t < 12) pad.right_bumper = true;
-      H.pads[1] = pad;
+      R.pads[1] = pad;
     }
   }
 
-  P.init();
-  for (let k = 0; k < 20; k++) { H.clock += DT; H.t += DT; P.tick(); }
-  if (o.scenario === 'auto') { W.column = ['P', 'P', 'P', 'P']; W.top = true; }
-  H.t = 0;
-  P.start();
   let step = '', parkedAt = null;
-  for (let k = 0; k < Math.round(o.seconds / DT); k++) {
-    H.clock += DT; H.t += DT;
-    scenario(k);
-    P.tick();
-    if (P.error) throw new Error(`OpMode crashed: ${P.error.cls} ${P.error.msg} (${P.error.file}:${P.error.line})`);
-    physics();
-    const tel = (H.tel || []).join(' | ');
-    const st = /auto : (\w+)/.exec(tel);
-    if (st && st[1] !== step) { step = st[1]; log(`step ${step} at ${at()}`); if (step === 'DONE' && parkedAt == null) parkedAt = H.t; }
-  }
+  const res = SB.runOpMode({
+    code, opmode: o.opmode, seconds: o.seconds, initSeconds: 0.4,
+    host: (run) => { R = run; return host; },
+    onStart() { if (o.scenario === 'auto') { W.column = ['P', 'P', 'P', 'P']; W.top = true; } },
+    beforeTick(run) { if (run.phase === 'run') scenario(run.tick); },
+    afterTick(run) {
+      if (run.phase !== 'run') return;
+      physics();
+      const tel = (run.telemetry || []).join(' | ');
+      const st = /auto : (\w+)/.exec(tel);
+      if (st && st[1] !== step) { step = st[1]; log(`step ${step} at ${at()}`); if (step === 'DONE' && parkedAt == null) parkedAt = run.t; }
+    },
+  });
+  if (!res.compile.ok) throw new Error('compile failed: ' + res.compile.error);
+  if (res.compile.parseErrors.length) throw new Error('parse errors: ' + JSON.stringify(res.compile.parseErrors));
+  if (res.error) throw new Error(`OpMode crashed: ${res.error.cls} ${res.error.msg} (${res.error.file}:${res.error.line})`);
   const xIn = H.x / IN, yIn = H.y / IN;
   const sign = o.alliance === 'RED' ? 1 : -1;
   const inZone = sign * xIn - 9 <= -59.5 && sign * yIn + 9 >= 23.9 && sign * yIn - 9 <= 46.6;
   return {
-    events: W.events, telemetry: H.tel || [],
+    events: W.events, telemetry: res.telemetry,
     summary: {
       opmode: o.opmode, scenario: o.scenario, shots: W.shots.length, fired: W.shots.map((s) => s.ball).join(''),
       taken: W.taken.join(''), spatOut: W.spat.join(''), opponentFired: W.shots.filter((s) => s.ball === (o.alliance === 'RED' ? 'B' : 'R')).length,
